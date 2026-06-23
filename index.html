@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>高校生活真实环境查询</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f8f9fa; line-height: 1.6; }
         h1 { text-align: center; color: #1a73e8; }
-        input { padding: 12px; width: 70%; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; }
-        button { padding: 12px 24px; font-size: 16px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .search-box { text-align: center; margin: 25px 0; }
+        input { padding: 14px; width: 65%; font-size: 17px; border: 2px solid #ddd; border-radius: 12px; }
+        button { padding: 14px 28px; font-size: 17px; background: #1a73e8; color: white; border: none; border-radius: 12px; cursor: pointer; }
         button:hover { background: #1662c7; }
-        #result { margin: 30px 0; padding: 25px; background: #f8f9fa; border-radius: 12px; border-left: 5px solid #1a73e8; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .error { color: #d93025; }
+        #result { margin: 30px 0; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 16px; }
     </style>
 </head>
 <body>
     <h1>🏫 高校生活真实环境查询</h1>
     
-    <div style="text-align:center; margin:20px 0;">
+    <div class="search-box">
         <input type="text" id="searchInput" placeholder="输入学校名称，例如 西安理工大学" />
         <button onclick="searchSchool()">🔍 查询</button>
     </div>
@@ -34,15 +34,13 @@
     <script>
         let schoolData = [];
 
-        // 加载本地 CSV（推荐方式）
         async function loadData() {
             try {
-                const response = await fetch('./data.csv');   // 注意：要和 index.html 同目录
+                const response = await fetch('data.csv');
                 const text = await response.text();
                 const rows = text.split('\n').slice(1);
                 
                 schoolData = rows.map(row => {
-                    // 简单 CSV 解析（支持逗号）
                     const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
                     return {
                         school: cols[0] || '',
@@ -51,16 +49,13 @@
                         other: cols[3] || ''
                     };
                 }).filter(item => item.school);
-
-                console.log(`成功加载 ${schoolData.length} 条数据`);
             } catch (e) {
-                console.error(e);
-                document.getElementById('result').innerHTML = `<p class="error">数据加载失败，请确认 data.csv 文件已上传</p>`;
+                console.error("加载失败", e);
             }
         }
 
         function searchSchool() {
-            let keyword = document.getElementById('searchInput').value.trim();
+            const keyword = document.getElementById('searchInput').value.trim();
             if (!keyword) return;
 
             history.replaceState(null, '', `?s=${encodeURIComponent(keyword)}`);
@@ -69,7 +64,7 @@
                 item.school.toLowerCase().includes(keyword.toLowerCase())
             );
 
-            let html = `<h2>搜索「${keyword}」的结果</h2>`;
+            let html = `<h2>「${keyword}」搜索结果</h2>`;
 
             if (results.length > 0) {
                 results.forEach(item => {
@@ -78,7 +73,7 @@
                         <h3>${item.school}</h3>
                         <p><strong>🏠 宿舍情况：</strong>${item.dorm}</p>
                         <p><strong>🍲 食堂情况：</strong>${item.canteen}</p>
-                        ${item.other ? `<p><strong>📝 其他：</strong>${item.other}</p>` : ''}
+                        ${item.other ? `<p><strong>📝 其他信息：</strong>${item.other}</p>` : ''}
                     </div>`;
                 });
             } else {
@@ -88,21 +83,21 @@
             document.getElementById('result').innerHTML = html;
         }
 
-        // 投稿
+        // 投稿功能（自动预填学校名称）
         document.getElementById('submitForm').onsubmit = function(e) {
             e.preventDefault();
             const school = document.getElementById('schoolName').value.trim();
             if (!school) return;
+
+            const baseUrl = "https://docs.google.com/forms/d/e/1FAIpQLScVYQjUAyZHIdx2_dV7qBhXAhCxsXswQ1BKgB6gwxJ5PujCEQ/viewform";
+            const prefillUrl = `${baseUrl}?usp=pp_url&entry.你的字段ID=${encodeURIComponent(school)}`;
             
-            // 替换成你的真实表单链接
-            const formUrl = "https://docs.google.com/forms/d/e/你的表单ID/viewform?usp=pp_url&entry.你的ID=" + encodeURIComponent(school);
-            window.open(formUrl, '_blank');
+            window.open(prefillUrl, '_blank');
         };
 
         window.onload = async () => {
             await loadData();
-            const params = new URLSearchParams(window.location.search);
-            const s = params.get('s');
+            const s = new URLSearchParams(location.search).get('s');
             if (s) {
                 document.getElementById('searchInput').value = s;
                 searchSchool();
